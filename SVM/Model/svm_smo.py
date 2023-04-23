@@ -1,6 +1,11 @@
+from pathlib import Path
+import sys
+path_root = Path(__file__).parents[2]
+sys.path.append(str(path_root))
 from requirements import *
 class Support_Vector_Machines_SMO():
-    def __init__(self, max_iter=100, kernel="linear", C=100, tolerance=1e-5, gamma=None, degree=None):
+    def __init__(self, kernel="linear", C=100, tolerance=1e-5, max_iter=500, gamma=1, degree=2):
+        random.seed(17)
         self.max_iter = max_iter
         kernels = {
             'linear': self.kernel_linear,
@@ -72,7 +77,7 @@ class Support_Vector_Machines_SMO():
         self.sv = np.squeeze(self.lambdas > 1e-5)
         return self.b
     def support_vectors_calculation(self):
-        f_x = np.sum(self.lambdas*self.y*self.kernel(self.X, self.X), axis=0)+self.b
+        f_x = np.sum(self.lambdas.reshape(-1,1)*self.y.reshape(-1,1)*self.K, axis=0)+self.b
         indexes = []
         for i in range(len(self.X)):
             if(self.y[i]==1 and f_x[i] - 1 < 1e-2 or self.y[i]==-1 and f_x[i] +1 > -1e-2):

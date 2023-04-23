@@ -1,16 +1,21 @@
+from pathlib import Path
+import sys
+path_root = Path(__file__).parents[2]
+sys.path.append(str(path_root))
 from requirements import *
-from svm_smo import *
+from Model.svm_smo import *
 class svm_plots_with_test():
-    def __init__(self, X_train, y_train, X_test, y_test, values, param_name):
+    def __init__(self, X_train, y_train, X_test, y_test, values, param_name, kernel):
         self.X_train = X_train
         self.y_train = y_train
         self.values = values
         self.param_name = param_name
+        self.kernel = kernel
         self.X_test = X_test
         self.y_test = y_test
     
     def model_fitting(self, params):
-        model = Support_Vector_Machines_SMO(**params, kernel="rbf", gamma=1)
+        model = Support_Vector_Machines_SMO(**params, kernel=self.kernel)
         model.fit(self.X_train, self.y_train)
         y_pred = model.predict(self.X_test)
         return model, np.round(balanced_accuracy_score(self.y_test, y_pred), 4)
