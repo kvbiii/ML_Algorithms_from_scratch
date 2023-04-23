@@ -4,6 +4,7 @@ path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
 from Model.svm_smo import *
+pio.renderers.default = "plotly_mimetype+notebook"
 class svm_plots_with_test():
     def __init__(self, X_train, y_train, X_test, y_test, values, param_name, kernel):
         self.X_train = X_train
@@ -75,7 +76,7 @@ class svm_plots_with_test():
             for trace in fig.data:
                 final_fig.append_trace(trace, row=row, col=col)
             i = i + 1
-        width = columns*1000
-        height = rows*1000
+        width = columns*500
+        height = rows*500
         final_fig.update_layout(template="simple_white", width=width, height=height, showlegend=True, font=dict(family="Times New Roman",size=16,color="Black"))
-        final_fig.show(renderer="browser")
+        final_fig.show("png")
