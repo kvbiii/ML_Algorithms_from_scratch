@@ -6,3 +6,5 @@ import plotly
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
+import plotly.io as pio
+import kaleido
