@@ -8,3 +8,4 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import plotly.io as pio
 import kaleido
+import torch
