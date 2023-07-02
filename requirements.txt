@@ -4,3 +4,4 @@ random
 plotly
 kaleido
 torch
+scipy
