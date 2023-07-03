@@ -3,6 +3,7 @@ import sys
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
+
 class Support_Vector_Machines_SMO():
     def __init__(self, kernel="linear", C=100, tolerance=1e-5, max_iter=500, gamma=1, degree=2):
         random.seed(17)
