@@ -10,3 +10,4 @@ import plotly.io as pio
 import kaleido
 import torch
 from scipy import stats
+from sklearn.preprocessing import OrdinalEncoder
