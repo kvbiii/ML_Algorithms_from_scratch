@@ -1,25 +1,29 @@
 from pathlib import Path
 import sys
-path_root = Path(__file__).parents[2]
+path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
 pio.renderers.default = "plotly_mimetype+notebook"
+from Metrics.Regression_metrics import *
+from Metrics.Classification_metrics import *
+from Linear_Regression.Model.Linear_regression_from_scratch import *
+
 class Prediction_plots():
     def __init__(self):
         pass
     def compare_predictions_with_real_values(self, y_true, y_pred, metric="MSE"):
         self.metric = metric
-        metrics = { "MSE": self.mean_squared_error(y_true, y_pred),
-                    "RMSE": self.root_mean_squared_error(y_true, y_pred),
-                    "MAE": self.mean_absolute_error(y_true, y_pred),
-                    "MAPE": self.mean_absolute_percentage_error(y_true, y_pred),
-                    "MedAE": self.median_absolute_error(y_true, y_pred),
-                    "MSLE": self.mean_squared_logarithm_error(y_true, y_pred)}
+        metrics = { "MSE": mean_squared_error(y_true, y_pred),
+                    "RMSE": root_mean_squared_error(y_true, y_pred),
+                    "MAE": mean_absolute_error(y_true, y_pred),
+                    "MAPE": mean_absolute_percentage_error(y_true, y_pred),
+                    "MedAE": median_absolute_error(y_true, y_pred),
+                    "MSLE": mean_squared_logarithm_error(y_true, y_pred)}
         if self.metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
         self.eval_metric = np.round(metrics[self.metric], 5)
-        if(type(y_true) == torch.Tensor):
-            y_true = y_true.squeeze(1)
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_true.flatten().tolist(), mode='lines', line=dict(color="orange"), name="Real values"))
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_pred.flatten().tolist(), mode='lines', line=dict(color="blue"), name="Predictions"))
@@ -49,6 +53,31 @@ class Prediction_plots():
         fig = go.Figure()
         fig.add_trace(go.Bar(x=column_names, y=feature_importances, marker_color='rgb(26, 118, 255)'))
         fig.update_layout(template="simple_white", width=max(30*len(column_names), 600), height=max(30*len(column_names), 600), title_text="<b>Feature importance<b>", title_x=0.5, yaxis_title="Feature importance", xaxis=dict(title='Features', showticklabels=True, type="category"), font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def plot_linear_regression(self, y_true, y_pred, metric="MSE"):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+        if(y_true.ndim == 2):
+            y_true=y_true.squeeze()
+        if(y_pred.ndim == 2):
+            y_pred=y_pred.squeeze()
+        self.metric = metric
+        metrics = { "MSE": mean_squared_error(y_true, y_pred),
+                    "RMSE": root_mean_squared_error(y_true, y_pred),
+                    "MAE": mean_absolute_error(y_true, y_pred),
+                    "MAPE": mean_absolute_percentage_error(y_true, y_pred),
+                    "MedAE": median_absolute_error(y_true, y_pred),
+                    "MSLE": mean_squared_logarithm_error(y_true, y_pred)}
+        if self.metric not in metrics:
+            raise ValueError('Unsupported metric: {}'.format(metric))
+        self.eval_metric = np.round(metrics[self.metric], 5)
+        model = Linear_Regression(fit_intercept=True, optimization=False, degree=2)
+        model.fit(y_true, y_pred, features_names=["y_pred"], target_name="Sales", robust=False)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=y_pred, y=y_true, mode='markers',marker=dict(colorscale='Jet', size=10, line=dict(color='black', width=1)), showlegend=False))
+        fig.add_trace(go.Scatter(x=y_pred, y=model.coef_[1]*y_pred+model.coef_[0], mode='lines',line=dict(color='#e10c00', width=5), showlegend=False))
+        fig.update_layout(template="simple_white", width=600, height=600, showlegend=False, xaxis_title="Predictions", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), title_text="<b>Mean squared error: {}<b>".format(np.round(mean_squared_error(y_true, y_pred), 4)), title_x=0.5, title_y=0.97)
         fig.show("png")
     
     def conf_matrix(self, y_true, y_pred, normalize=False):
@@ -91,16 +120,3 @@ class Prediction_plots():
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
         fig['data'][0]['showscale'] = True
         fig.show("png")
-
-    def mean_squared_error(self, y_true, y_pred):
-        return np.mean((y_true - y_pred) ** 2)
-    def root_mean_squared_error(self, y_true, y_pred):
-        return np.sqrt(np.mean((y_true - y_pred) ** 2))
-    def mean_absolute_error(self, y_true, y_pred):
-        return np.mean(np.abs(y_true - y_pred))
-    def mean_absolute_percentage_error(self, y_true, y_pred):
-        return np.mean(np.abs((y_true - y_pred) / y_true))
-    def median_absolute_error(self, y_true, y_pred):
-        return np.median(np.abs(y_true - y_pred))
-    def mean_squared_logarithm_error(self, y_true, y_pred):
-        return np.mean((np.log(np.abs(1+y_true))-np.log(np.abs(1+y_pred)))**2)
