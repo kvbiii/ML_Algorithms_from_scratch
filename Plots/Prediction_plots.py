@@ -120,3 +120,77 @@ class Prediction_plots():
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
         fig['data'][0]['showscale'] = True
         fig.show("png")
+    
+    def homoscedacity_plot(self, y_true, y_pred):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+        if(y_true.ndim == 2):
+            y_true=y_true.squeeze()
+        if(y_pred.ndim == 2):
+            y_pred=y_pred.squeeze()
+        residuals = y_true - y_pred
+        fig = px.scatter(x=y_pred, y=residuals, labels={"x": "Fitted values",  "y": "Residuals"}, trendline="lowess", trendline_color_override="green")
+        fig.add_shape(type="line", line_color="red", line_width=2, opacity=0.5, line_dash="dash",x0=0, x1=1, xref="paper", y0=0, y1=0, yref="y")
+        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title="Fitted values",yaxis_title="Residuals", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def hist_plot_with_kde(self, data, xaxis_title):
+        data = np.array(data)
+        if(data.ndim==2):
+            data = data.squeeze()
+        hist_data = [data]
+        group_labels =[xaxis_title]
+        fig = ff.create_distplot(hist_data, group_labels=group_labels, show_rug=False, curve_type='kde', bin_size=1)
+        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title=xaxis_title,yaxis_title="Density", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def quantile_plot(self, data):
+        data = np.array(data)
+        if(data.ndim == 2):
+            data = data.squeeze()
+        qqplot_data = qqplot(data, line='s').gca().lines
+        plt.close()
+        fig = go.Figure()
+        fig.add_trace({'type': 'scatter','x': qqplot_data[0].get_xdata(),'y': qqplot_data[0].get_ydata(), 'mode': 'markers', 'marker': {'color': 'blue'}})
+        fig.add_trace({'type': 'scatter','x': qqplot_data[1].get_xdata(),'y': qqplot_data[1].get_ydata(),'mode': 'lines','line': {'color': 'black'}})
+        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title="Theoritical Quantities",yaxis_title="Sample Quantities", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def boxplot(self, data):
+        data = np.array(data)
+        if(data.ndim == 2):
+            data = data.squeeze()
+        fig = go.Figure()
+        fig.add_trace(go.Box(y=data, showlegend=False))
+        fig.update_layout(template="simple_white", width=800, xaxis_title="", height=600, showlegend=False, yaxis_title="Sample data", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def influence_plot(self, X, outliers):
+        fig = go.Figure()
+        fig.add_shape(type="line", x0=np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01), y0=2, x1=np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01), y1=2,line=dict(color="red",width=4,dash="dash"))
+        fig.add_shape(type="line", x0=np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01), y0=-2, x1=np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01), y1=-2,line=dict(color="red",width=4,dash="dash"))
+        fig.add_shape(type="line", x0=2*X.shape[1]/X.shape[0], y0=np.min(outliers.standarized_residuals)+np.quantile(outliers.standarized_residuals, 0.25), x1=2*X.shape[1]/X.shape[0], y1=np.max(outliers.standarized_residuals)-np.quantile(outliers.standarized_residuals, 0.25),line=dict(color="green",width=4,dash="dash"))
+        fig.add_trace(go.Scatter(x=outliers.leverage, y=outliers.standarized_residuals, mode="markers", marker=dict(size=outliers.cook_distance, sizemode="area", sizeref=2.*max(outliers.cook_distance)/(40.**2), sizemin=4)))
+        i = 0
+        while(i < len(outliers.indices_of_outliers)):
+            fig.add_annotation(x=outliers.leverage[outliers.indices_of_outliers[i]], y=outliers.standarized_residuals[outliers.indices_of_outliers[i]],text=outliers.indices_of_outliers[i],showarrow=False)
+            i = i + 1
+        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, yaxis_range=[np.min(outliers.standarized_residuals)+np.quantile(outliers.standarized_residuals, 0.25), np.max(outliers.standarized_residuals)-np.quantile(outliers.standarized_residuals, 0.25)], xaxis_range=[np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01),np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01)], xaxis_title="Leverage", yaxis_title="Standarized Residuals", title_text="<b>Influence plot<b>", title_x=0.5, title_y=0.99, font=dict(family="Times New Roman",size=16,color="Black"), margin=dict(l=0, r=0.5, t=0.5, b=0.5))
+        fig.show("png")
+    
+    def correlation_plot(self, df, features_names):
+        df = np.array(df)
+        df = pd.DataFrame(df, columns=features_names)
+
+        corr = np.round(df[df.columns.tolist()].corr(), 3)
+        mask = np.triu(np.ones_like(corr, dtype=bool))
+        df_mask = corr.mask(mask)
+        fig = ff.create_annotated_heatmap(z=df_mask.to_numpy(), x=df_mask.columns.tolist(), y=df_mask.columns.tolist(),colorscale=px.colors.diverging.RdBu,hoverinfo="none", showscale=True, ygap=1, xgap=1)
+        fig.update_xaxes(side="bottom")
+        fig.update_layout(width=1200, height=800,xaxis_showgrid=False,yaxis_showgrid=False,xaxis_zeroline=False,yaxis_zeroline=False,yaxis_autorange='reversed',template='plotly_white',font=dict(family="Times New Roman",size=12,color="Black"))
+        # NaN values are not handled automatically and are displayed in the figure
+        # So we need to get rid of the text manually
+        for i in range(len(fig.layout.annotations)):
+            if fig.layout.annotations[i].text == 'nan':
+                fig.layout.annotations[i].text = ""
+        fig.show("png")
