@@ -3,9 +3,7 @@ import sys
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
-path_root = Path(__file__).parents[1]
-sys.path.append(str(path_root))
-from Metrics import *
+from Metrics.Regression_metrics import *
 
 class CHOW():
     def __init__(self):
@@ -22,10 +20,7 @@ class CHOW():
             data, index, features_names, feature = self.check_if_feature_is_binary_categorical(df=data, features_names=features_names, feature=feature)
             group_indices, number_of_subsamples = self.find_indices_of_subsamples(df=data, index=index)
             sum_of_rss = self.calculate_sum_of_rss_in_subsamples(model=model, df=X, y=y, group_indices=group_indices, index=index, features_names=features_names, target_name=target_name)
-        nominator = (rss_original-sum_of_rss)/(len(features_names)*(number_of_subsamples-1))
-        denominator = (sum_of_rss/(len(X)-number_of_subsamples*len(features_names)))
-        self.F_test = np.round(nominator/denominator, 5)
-        self.p_value = np.round(model.calculate_p_value_F_test(F_test=self.F_test, dfn=(number_of_subsamples-1)*len(features_names), dfd=len(X)-number_of_subsamples*len(features_names)), 5)
+        self.F_test, self.p_value = self.calculate_F_test_and_p_value(model=model, X=X, rss_original=rss_original, sum_of_rss=sum_of_rss, features_names=features_names, number_of_subsamples=number_of_subsamples)
 
     def read_fitted_model_attributes(self, fitted_model):
         mod_class = fitted_model.__class__
@@ -48,7 +43,7 @@ class CHOW():
         except:
             index = np.where(df.columns==feature)[0][0]
             df = np.array(df)
-        if(len(np.unique(df[:,index])) > 15):
+        if(len(np.unique(df[:,index]))/len(df) > 0.2 and len(np.unique(df[:,index]) > 15)):
             raise ValueError('Provided feature is not categorical nor binary.')
         return df, index, features_names, feature
     
@@ -78,3 +73,10 @@ class CHOW():
             sum_of_rss = sum_of_rss + rss
             i = i + 1
         return sum_of_rss
+    
+    def calculate_F_test_and_p_value(self, model, X, rss_original, sum_of_rss, features_names, number_of_subsamples):
+        nominator = (rss_original-sum_of_rss)/(len(features_names)*(number_of_subsamples-1))
+        denominator = (sum_of_rss/(len(X)-number_of_subsamples*len(features_names)))
+        F_test = np.round(nominator/denominator, 5)
+        p_value = np.round(model.calculate_p_value_F_test(F_test=F_test, dfn=(number_of_subsamples-1)*len(features_names), dfd=len(X)-number_of_subsamples*len(features_names)), 5)
+        return F_test, p_value
