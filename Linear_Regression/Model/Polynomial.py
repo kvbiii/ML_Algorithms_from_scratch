@@ -32,7 +32,7 @@ class PolynomialFeatures():
         while(i < self.X_original_len):
             j = 2
             while(j <= self.degree):
-                self.features_names.append(f"{self.features_names[i]}^{j}")
+                self.features_names.append(f"{input_features_names[i]}^{j}")
                 j = j + 1
             i = i + 1
         return self.features_names
