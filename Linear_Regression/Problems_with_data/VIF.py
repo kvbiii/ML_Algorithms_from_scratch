@@ -3,12 +3,9 @@ import sys
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
-path_root = Path(__file__).parents[1]
-sys.path.append(str(path_root))
-from Metrics import *
 
 class VIF():
-    def __init__(self,):
+    def __init__(self):
         pass
 
     def test(self, fitted_model):
