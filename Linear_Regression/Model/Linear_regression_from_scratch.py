@@ -83,7 +83,7 @@ class Linear_Regression():
         if(self.optimization==True):
             polynomial = PolynomialFeatures(degree=self.degree)
             X = polynomial.fit_transform(X)
-            features_names = polynomial.get_feature_names_out(input_features_names=features_names)
+            features_names = polynomial.get_feature_names_out(features_names)
         return X
 
     def check_intercept(self, X, features_names):
