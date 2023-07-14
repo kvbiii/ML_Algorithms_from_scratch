@@ -10,7 +10,12 @@ from plotly import express as px
 import plotly.io as pio
 import kaleido
 import torch
-from scipy import stats
-from sklearn.preprocessing import OrdinalEncoder, StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, OrdinalEncoder
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 from statsmodels.graphics.gofplots import qqplot
 from matplotlib import pyplot as plt
+from scipy import stats
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+import itertools
+from tabulate import tabulate
+import kds
