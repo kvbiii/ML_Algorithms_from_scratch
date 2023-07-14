@@ -5,3 +5,6 @@ plotly
 kaleido
 torch
 scipy
+scikit-learn
+tabulate
+kds
