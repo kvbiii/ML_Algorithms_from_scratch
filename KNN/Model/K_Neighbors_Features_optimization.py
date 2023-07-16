@@ -77,9 +77,11 @@ class Features_optimization():
     def cross_validation(self, X, y, metric, algorithm_instance, cross_validation_instance):
         metrics = {"accuracy": [lambda y, y_pred: accuracy_score(y, y_pred), "preds"],
                     "roc_auc": [lambda y, y_pred: roc_auc_score(y, y_pred), "probs"],
-                    "neg_mse": [lambda y, y_pred: -mean_squared_error(y, y_pred), "preds"],
-                    "neg_rmse": [lambda y, y_pred: -mean_squared_error(y, y_pred)**0.5, "preds"],
-                    "neg_mae": [lambda y, y_pred: -mean_absolute_error(y, y_pred), "preds"]}
+                    "mse": [lambda y, y_pred: -mean_squared_error(y, y_pred), "preds"],
+                    "rmse": [lambda y, y_pred: -mean_squared_error(y, y_pred)**0.5, "preds"],
+                    "mae": [lambda y, y_pred: -mean_absolute_error(y, y_pred), "preds"]}
+        if metric not in metrics:
+            raise ValueError('Unsupported metric: {}'.format(metric))
         eval_metric = metrics[metric][0]
         metric_type = metrics[metric][1]
         algorithm = algorithm_instance
