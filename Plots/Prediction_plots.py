@@ -3,10 +3,8 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
-pio.renderers.default = "plotly_mimetype+notebook"
-from Metrics.Regression_metrics import *
 from Metrics.Classification_metrics import *
-from Linear_Regression.Model.Linear_regression_from_scratch import *
+from Metrics.Regression_metrics import *
 
 class Prediction_plots():
     def __init__(self):
@@ -27,59 +25,24 @@ class Prediction_plots():
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_true.flatten().tolist(), mode='lines', line=dict(color="orange"), name="Real values"))
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_pred.flatten().tolist(), mode='lines', line=dict(color="blue"), name="Predictions"))
-        fig.update_layout(template="simple_white", width=600, height=600, title="Predictions and Real values", xaxis_title="", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(self.metric.upper(), self.eval_metric))
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Predictions and Real values<b>", title_x=0.5, xaxis_title="Observation", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(self.metric.upper(), self.eval_metric))
         fig.show("png")
 
-    def plot_losses(self, train_loss, valid_loss):
+    def plot_losses(self, train_loss, valid_loss=None):
+        if(train_loss.ndim == 2):
+            train_loss = train_loss.squeeze()
+        if(valid_loss != None):
+            if(valid_loss.ndim == 2):
+                valid_loss = valid_loss.squeeze()
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(train_loss))], y=train_loss, mode='lines', line=dict(color="orange"), name="Train loss"))
-        fig.add_trace(go.Scatter(x=[i for i in range(len(valid_loss))], y=valid_loss, mode='lines', line=dict(color="blue"), name="Valid loss"))
-        fig.update_layout(template="simple_white", width=600, height=600, title="Loss plot", xaxis_title="Epochs", yaxis_title="Loss", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(yanchor="top",y=0.85,xanchor="left",x=0.65))
+        try:
+            fig.add_trace(go.Scatter(x=[i for i in range(len(valid_loss))], y=valid_loss, mode='lines', line=dict(color="blue"), name="Valid loss"))
+        except:
+            pass
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Loss plot<b>", title_x=0.5, xaxis_title="Epochs", yaxis_title="Loss", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(yanchor="top",y=0.85,xanchor="left",x=0.65))
         fig.show("png")
-    
-    def plot_feature_importances(self, feature_importances, column_names=None, nlargest=None):
-        if(column_names == None):
-            column_names = np.array([i for i in range(len(feature_importances))])
-        if not isinstance(column_names, np.ndarray):
-            try:
-                column_names = np.array(column_names)
-            except:
-                raise TypeError('Wrong type of column_names. It should be numpy array, or list..')
-        if(nlargest != None):
-            ranking = (np.argsort(np.argsort(-np.array(feature_importances))))
-            support = np.where(ranking < nlargest, True, False)
-            feature_importances = feature_importances[support]
-            column_names = column_names[support]
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=column_names, y=feature_importances, marker_color='rgb(26, 118, 255)'))
-        fig.update_layout(template="simple_white", width=max(30*len(column_names), 600), height=max(30*len(column_names), 600), title_text="<b>Feature importance<b>", title_x=0.5, yaxis_title="Feature importance", xaxis=dict(title='Features', showticklabels=True, type="category"), font=dict(family="Times New Roman",size=16,color="Black"))
-        fig.show("png")
-    
-    def plot_linear_regression(self, y_true, y_pred, metric="MSE"):
-        y_true = np.array(y_true)
-        y_pred = np.array(y_pred)
-        if(y_true.ndim == 2):
-            y_true=y_true.squeeze()
-        if(y_pred.ndim == 2):
-            y_pred=y_pred.squeeze()
-        self.metric = metric
-        metrics = { "MSE": mean_squared_error(y_true, y_pred),
-                    "RMSE": root_mean_squared_error(y_true, y_pred),
-                    "MAE": mean_absolute_error(y_true, y_pred),
-                    "MAPE": mean_absolute_percentage_error(y_true, y_pred),
-                    "MedAE": median_absolute_error(y_true, y_pred),
-                    "MSLE": mean_squared_logarithm_error(y_true, y_pred)}
-        if self.metric not in metrics:
-            raise ValueError('Unsupported metric: {}'.format(metric))
-        self.eval_metric = np.round(metrics[self.metric], 5)
-        model = Linear_Regression(fit_intercept=True, optimization=False, degree=2)
-        model.fit(y_true, y_pred, features_names=["y_pred"], target_name="Sales", robust=False)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=y_pred, y=y_true, mode='markers',marker=dict(colorscale='Jet', size=10, line=dict(color='black', width=1)), showlegend=False))
-        fig.add_trace(go.Scatter(x=y_pred, y=model.coef_[1]*y_pred+model.coef_[0], mode='lines',line=dict(color='#e10c00', width=5), showlegend=False))
-        fig.update_layout(template="simple_white", width=600, height=600, showlegend=False, xaxis_title="Predictions", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), title_text="<b>Mean squared error: {}<b>".format(np.round(mean_squared_error(y_true, y_pred), 4)), title_x=0.5, title_y=0.97)
-        fig.show("png")
-    
+
     def conf_matrix(self, y_true, y_pred, normalize=False):
         if(normalize==True):
             CM = confusion_matrix(y_true, y_pred, normalize='true')
@@ -100,7 +63,7 @@ class Prediction_plots():
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
         fig['data'][0]['showscale'] = True
         fig.show("png")
-    
+
     def multilabel_conf_matrix(self, y_true, y_pred, labels, normalize=False):
         if(normalize==True):
             CM = confusion_matrix(y_true, y_pred, normalize='true')
@@ -120,77 +83,64 @@ class Prediction_plots():
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
         fig['data'][0]['showscale'] = True
         fig.show("png")
-    
-    def homoscedacity_plot(self, y_true, y_pred):
-        y_true = np.array(y_true)
-        y_pred = np.array(y_pred)
-        if(y_true.ndim == 2):
-            y_true=y_true.squeeze()
-        if(y_pred.ndim == 2):
-            y_pred=y_pred.squeeze()
-        residuals = y_true - y_pred
-        fig = px.scatter(x=y_pred, y=residuals, labels={"x": "Fitted values",  "y": "Residuals"}, trendline="lowess", trendline_color_override="green")
-        fig.add_shape(type="line", line_color="red", line_width=2, opacity=0.5, line_dash="dash",x0=0, x1=1, xref="paper", y0=0, y1=0, yref="y")
-        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title="Fitted values",yaxis_title="Residuals", font=dict(family="Times New Roman",size=16,color="Black"))
-        fig.show("png")
-    
-    def hist_plot_with_kde(self, data, xaxis_title):
-        data = np.array(data)
-        if(data.ndim==2):
-            data = data.squeeze()
-        hist_data = [data]
-        group_labels =[xaxis_title]
-        fig = ff.create_distplot(hist_data, group_labels=group_labels, show_rug=False, curve_type='kde', bin_size=1)
-        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title=xaxis_title,yaxis_title="Density", font=dict(family="Times New Roman",size=16,color="Black"))
-        fig.show("png")
-    
-    def quantile_plot(self, data):
-        data = np.array(data)
-        if(data.ndim == 2):
-            data = data.squeeze()
-        qqplot_data = qqplot(data, line='s').gca().lines
-        plt.close()
-        fig = go.Figure()
-        fig.add_trace({'type': 'scatter','x': qqplot_data[0].get_xdata(),'y': qqplot_data[0].get_ydata(), 'mode': 'markers', 'marker': {'color': 'blue'}})
-        fig.add_trace({'type': 'scatter','x': qqplot_data[1].get_xdata(),'y': qqplot_data[1].get_ydata(),'mode': 'lines','line': {'color': 'black'}})
-        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title="Theoritical Quantities",yaxis_title="Sample Quantities", font=dict(family="Times New Roman",size=16,color="Black"))
-        fig.show("png")
-    
-    def boxplot(self, data):
-        data = np.array(data)
-        if(data.ndim == 2):
-            data = data.squeeze()
-        fig = go.Figure()
-        fig.add_trace(go.Box(y=data, showlegend=False))
-        fig.update_layout(template="simple_white", width=800, xaxis_title="", height=600, showlegend=False, yaxis_title="Sample data", font=dict(family="Times New Roman",size=16,color="Black"))
-        fig.show("png")
-    
-    def influence_plot(self, X, outliers):
-        fig = go.Figure()
-        fig.add_shape(type="line", x0=np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01), y0=2, x1=np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01), y1=2,line=dict(color="red",width=4,dash="dash"))
-        fig.add_shape(type="line", x0=np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01), y0=-2, x1=np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01), y1=-2,line=dict(color="red",width=4,dash="dash"))
-        fig.add_shape(type="line", x0=2*X.shape[1]/X.shape[0], y0=np.min(outliers.standarized_residuals)+np.quantile(outliers.standarized_residuals, 0.25), x1=2*X.shape[1]/X.shape[0], y1=np.max(outliers.standarized_residuals)-np.quantile(outliers.standarized_residuals, 0.25),line=dict(color="green",width=4,dash="dash"))
-        fig.add_trace(go.Scatter(x=outliers.leverage, y=outliers.standarized_residuals, mode="markers", marker=dict(size=outliers.cook_distance, sizemode="area", sizeref=2.*max(outliers.cook_distance)/(40.**2), sizemin=4)))
-        i = 0
-        while(i < len(outliers.indices_of_outliers)):
-            fig.add_annotation(x=outliers.leverage[outliers.indices_of_outliers[i]], y=outliers.standarized_residuals[outliers.indices_of_outliers[i]],text=outliers.indices_of_outliers[i],showarrow=False)
-            i = i + 1
-        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, yaxis_range=[np.min(outliers.standarized_residuals)+np.quantile(outliers.standarized_residuals, 0.25), np.max(outliers.standarized_residuals)-np.quantile(outliers.standarized_residuals, 0.25)], xaxis_range=[np.min(outliers.leverage)-np.quantile(outliers.leverage, 0.01),np.max(outliers.leverage)+np.quantile(outliers.leverage, 0.01)], xaxis_title="Leverage", yaxis_title="Standarized Residuals", title_text="<b>Influence plot<b>", title_x=0.5, title_y=0.99, font=dict(family="Times New Roman",size=16,color="Black"), margin=dict(l=0, r=0.5, t=0.5, b=0.5))
-        fig.show("png")
-    
-    def correlation_plot(self, df, features_names):
-        df = np.array(df)
-        df = pd.DataFrame(df, columns=features_names)
 
-        corr = np.round(df[df.columns.tolist()].corr(), 3)
-        mask = np.triu(np.ones_like(corr, dtype=bool))
-        df_mask = corr.mask(mask)
-        fig = ff.create_annotated_heatmap(z=df_mask.to_numpy(), x=df_mask.columns.tolist(), y=df_mask.columns.tolist(),colorscale=px.colors.diverging.RdBu,hoverinfo="none", showscale=True, ygap=1, xgap=1)
-        fig.update_xaxes(side="bottom")
-        fig.update_layout(width=1200, height=800,xaxis_showgrid=False,yaxis_showgrid=False,xaxis_zeroline=False,yaxis_zeroline=False,yaxis_autorange='reversed',template='plotly_white',font=dict(family="Times New Roman",size=12,color="Black"))
-        # NaN values are not handled automatically and are displayed in the figure
-        # So we need to get rid of the text manually
-        for i in range(len(fig.layout.annotations)):
-            if fig.layout.annotations[i].text == 'nan':
-                fig.layout.annotations[i].text = ""
+    def roc_auc_plot(self, y_true, y_prob):
+        fpr, tpr, thresholds = roc_curve(y_true, y_prob)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines', line=dict(color="orange"), name="ROC Curve: {}".format(np.round(roc_auc_score(y_true, y_prob), 4))))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines', line=dict(color="blue", dash='dash'), showlegend=False))
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="False Positive Rate", yaxis_title="True Positive Rate", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(yanchor="top",y=0.25,xanchor="left",x=0.65))
+        fig.update_yaxes(range=[0, 1], scaleanchor="x", scaleratio=1, linecolor='black')
+        fig.update_xaxes(range=[0, 1], constrain='domain', linecolor='black')
+        fig.show("png")
+    
+    def precision_recall_plot(self, y_true, y_prob):
+        precision, recall, thresholds = precision_recall_curve(y_true, y_prob)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=recall, y=precision, mode='lines', line=dict(color="blue"), fill='tonexty', fillcolor='cornflowerblue', showlegend=True, name="PR Curve: {}".format(np.round(average_precision_score(y_true, y_prob), 4))))
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Recall",yaxis_title="Precision", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(yanchor="top",y=0.99,xanchor="left",x=0.65))
+        fig.update_yaxes(range=[0, 1], scaleanchor="x", scaleratio=1, linecolor='black')
+        fig.update_xaxes(range=[0, 1], constrain='domain', linecolor='black')
+        fig.show("png")
+
+    def gain_plot(self, y_true, y_prob):
+        data = kds.metrics.decile_table(y_true, y_prob)
+        decile = [0]+data["decile"].values.flatten().tolist()
+        gain_pct = [0]+data["cum_resp_pct"].values.flatten().tolist()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=decile, y=gain_pct, mode='lines+markers', line=dict(color="purple"), name="Gain"))
+        fig.add_trace(go.Scatter(x=[0, 10], y=[0, 100], mode='lines', line=dict(color="blue", dash='dash'), name="Random"))
+        fig.update_layout(template="simple_white", width=600, height=600, showlegend=True, xaxis_title="Decile",yaxis_title="Number of respondents (%)", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.update_yaxes(range=[0, 100], linecolor='black', dtick=20)
+        fig.update_xaxes(range=[0, 10], constrain='domain', linecolor='black', dtick=1)
+        fig.show("png")
+    
+    def lift_plot(self, y_true, y_prob):
+        data = kds.metrics.decile_table(y_true, y_prob)
+        decile = data["decile"].values.flatten().tolist()
+        lift_pct = data["lift"].values.flatten().tolist()
+        random = [1 for i in range(0, len(decile))]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=decile, y=lift_pct, mode='lines+markers', line=dict(color="green"), name="Model"))
+        fig.add_trace(go.Scatter(x=decile, y=random, mode='lines+markers', line=dict(color="blue"), name="Random"))
+        fig.update_layout(template="simple_white", width=600, height=600, showlegend=True, xaxis_title="Decyl",yaxis_title="Lift", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.update_xaxes(linecolor='black', dtick=1)
+        fig.show()
+
+    def plot_feature_importances(self, feature_importances, column_names=None, nlargest=None):
+        if(column_names == None):
+            column_names = np.array([i for i in range(len(feature_importances))])
+        if not isinstance(column_names, np.ndarray):
+            try:
+                column_names = np.array(column_names)
+            except:
+                raise TypeError('Wrong type of column_names. It should be numpy array, or list..')
+        if(nlargest != None):
+            ranking = (np.argsort(np.argsort(-np.array(feature_importances))))
+            support = np.where(ranking < nlargest, True, False)
+            feature_importances = feature_importances[support]
+            column_names = column_names[support]
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=column_names, y=feature_importances, marker_color='rgb(26, 118, 255)'))
+        fig.update_layout(template="simple_white", width=max(30*len(column_names), 600), height=max(30*len(column_names), 600), title_text="<b>Feature importance<b>", title_x=0.5, yaxis_title="Feature importance", xaxis=dict(title='Features', showticklabels=True, type="category"), font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
