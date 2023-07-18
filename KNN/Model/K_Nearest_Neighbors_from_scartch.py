@@ -212,7 +212,7 @@ class KNearestNeighbors():
         """
         chosen_values = stats.mode(target_values, axis=1, keepdims=True)[0]
         number_of_occurences = stats.mode(target_values, axis=1, keepdims=True)[1].squeeze()
-        #Just in case if we will have same count of classes in these most simmilar observations, then actually the most simmilar target will be returned 
+        #Just in case if we will have same count of classes in these most simmilar observations, then actually the most simmilar target will be returned
         indices_to_be_replaced = np.where(number_of_occurences == self.n_neighbors/len(np.unique(self.y_train)))[0]
         np.put(chosen_values, indices_to_be_replaced, target_values[indices_to_be_replaced,0])
         return chosen_values.squeeze()
