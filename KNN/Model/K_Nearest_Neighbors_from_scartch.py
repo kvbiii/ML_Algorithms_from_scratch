@@ -22,6 +22,7 @@ class KNearestNeighbors():
         self.distance = distances[distance]
         self.random_state = random_state
         random.seed(self.random_state)
+        self.fit_used = False
 
     def fit(self, X, y):
         """This function has to just remember these two arrays and decide what type of problem is there: classification or regression.
@@ -32,6 +33,7 @@ class KNearestNeighbors():
         """
         self.X_train = self.check_X(X=X, train=True)
         self.y_train = self.check_y(y=y, train=True)
+        self.fit_used = True
     
     def check_X(self, X, train):
         """Check type of input data and raise errors is something is wrong with it.
@@ -43,15 +45,18 @@ class KNearestNeighbors():
         Returns:
             np.array(X) ([np.array], shape=(n_samples, number_of_features)): numpy array of provided input vector.
         """
-        if not isinstance(X, pd.DataFrame) and not isinstance(X, np.ndarray) and not torch.is_tensor(X):
-            raise TypeError('Wrong type of X. It should be dataframe, numpy array or torch tensor.')
+        if not isinstance(X, pd.DataFrame) and not isinstance(X, pd.Series) and not isinstance(X, np.ndarray) and not torch.is_tensor(X):
+            raise TypeError('Wrong type of X. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
+        X = np.array(X)
+        if(X.ndim == 1):
+            X = X[None, :]
         if(train == True):
             if(X.shape[0] < self.n_neighbors):
                 raise ValueError(f"Expected n_neighbors <= n_samples, but n_samples = {X.shape[0]}, n_neighbors = {self.n_neighbors}")
         if(train == False):
             if(self.X_train.shape[1] != X.shape[1]):
                 raise ValueError(f"X has {X.shape[1]} features, but KNeighbors is expecting {self.X_train.shape[1]} features as input.")
-        return np.array(X)
+        return X
     
     def check_y(self, y, train):
         """Check type of y and determine wether this is a classification or regression problem.
@@ -61,16 +66,19 @@ class KNearestNeighbors():
             train ([bool]): True if this is array given in fit() method and False if this was argument for predict.
 
         Returns:
-            np.array(y) ([np.array], shape=(n_samples,)) numpy array of provided target vector.
+            y ([np.array], shape=(nR_samples,)) numpy array of provided target vector.
         """
         if not isinstance(y, pd.DataFrame) and not isinstance(y, pd.Series) and not isinstance(y, np.ndarray) and not torch.is_tensor(y):
             raise TypeError('Wrong type of y. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
+        y = np.array(y)
+        if(y.ndim == 2):
+            y = y.squeeze()
         if(train == True):
             if(len(np.unique(y)) > 30 or (self.X_train.shape[0] < 30 and len(np.unique(y)) == self.X_train.shape[0])):
                 self.problem_type = "regression"
             else:
                 self.problem_type = "classification"
-        return np.array(y)
+        return y
     
     def predict(self, X):
         """Predict class labels for provided input vector.
@@ -81,6 +89,7 @@ class KNearestNeighbors():
         Returns:
             predictions ([np.array], shape=(n_samples,)) predictions for provided input vector.
         """
+        self.check_fit(fit_used=self.fit_used)
         self.X_test = self.check_X(X=X, train=False)
         distances = self.distance(X_1=self.X_test, X_2=self.X_train)
         k_closest_indices = self.find_k_closest_indices(distances=distances)
@@ -96,11 +105,21 @@ class KNearestNeighbors():
         Returns:
             probabilities ([np.array], shape=(n_samples, number_of_classes)) probabilities of each class for provided input vector.
         """
+        self.check_fit(fit_used=self.fit_used)
         self.X_test = self.check_X(X=X, train=False)
         distances = self.distance(X_1=self.X_test, X_2=self.X_train)
         k_closest_indices = self.find_k_closest_indices(distances=distances)
         probabilities = self.get_probabilities(k_closest_indices=k_closest_indices)
         return probabilities
+    
+    def check_fit(self, fit_used):
+        """Check whether out object is fitted, if not then raise error.
+
+        Args:
+            fit_used ([bool]): Indicates whether our class has already been trained or not yet.
+        """
+        if fit_used == False:
+            raise AttributeError('KNN has to be fitted first.')
 
     def euclidean_distance(self, X_1, X_2):
         """
