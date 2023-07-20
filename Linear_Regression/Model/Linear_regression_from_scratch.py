@@ -44,16 +44,20 @@ class Linear_Regression():
         self.p_value_F_test = self.calculate_p_value_F_test(F_test=self.F_test, dfn=len(self.features_names), dfd=len(self.X)-len(self.features_names))
 
     def check_X(self, X):
-        if not isinstance(X, pd.DataFrame) and not isinstance(X, np.ndarray) and not torch.is_tensor(X):
-            raise TypeError('Wrong type of X. It should dataframe, numpy array or torch tensor.')
+        if not isinstance(X, pd.DataFrame) and not isinstance(X, pd.Series) and not isinstance(X, np.ndarray) and not torch.is_tensor(X):
+            raise TypeError('Wrong type of X. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
+        X = np.array(X)
+        if(X.ndim == 1):
+            X = X[None, :]
         return X
     
     def check_y(self, y):
-        if not isinstance(y, pd.DataFrame) and not isinstance(y, np.ndarray) and not torch.is_tensor(y):
-            raise TypeError('Wrong type of y. It should dataframe, numpy array or torch tensor.')
-        if(y.ndim == 1):
-            y = y[:, None]
-        return np.array(y)
+        if not isinstance(y, pd.DataFrame) and not isinstance(y, pd.Series) and not isinstance(y, np.ndarray) and not torch.is_tensor(y):
+            raise TypeError('Wrong type of y. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
+        y = np.array(y)
+        if(y.ndim == 2):
+            y = y.squeeze()
+        return y
     
     def check_features_and_target_names(self, features_names, target_name):
         try:
@@ -94,10 +98,7 @@ class Linear_Regression():
     
     def find_coefficients_basic_approach(self, X, y):
         try:
-            if(self.fit_intercept == True):
-                self.coef_ = np.array(np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y)))
-            else:
-                self.coef_ = np.array(np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y)))
+            self.coef_ = np.array(np.matmul(np.linalg.inv(np.matmul(X.T, X)), np.matmul(X.T, y)))
         except:
             self.find_coefficients_gradient_descent(X=X, y=y, learning_rate=0.01, num_epochs=10000)
     
