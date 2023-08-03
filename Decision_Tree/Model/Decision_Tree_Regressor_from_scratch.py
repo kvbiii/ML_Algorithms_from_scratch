@@ -99,8 +99,8 @@ class Decision_Tree_Regressor():
         best_false_rows = None
         error_current_subset = self.calculate_error(y=y)
         condition = {}
-        upper_bound = self.calculate_upper_bound(X=X)
-        for column in upper_bound:
+        limited_columns = self.get_limited_columns(X=X)
+        for column in limited_columns:
             interpolation_values = set([np.quantile(np.array(X)[:,column], q=i, method="midpoint") for i in [0, 0.2, 0.4, 0.6, 0.8, 1]])
             for interpolation_value in interpolation_values:
                 question = f"Is feature[{column}] <= {interpolation_value}"
@@ -117,7 +117,7 @@ class Decision_Tree_Regressor():
                     best_reduction, best_question, best_condition, best_true_rows, best_false_rows = reduction, question, condition.copy(), true_rows, false_rows
         return best_reduction, best_question, best_condition, best_true_rows, best_false_rows
     
-    def calculate_upper_bound(self, X):
+    def get_limited_columns(self, X):
         upper_bound = {None: random.sample([i for i in range(0, X.shape[1])], int(X.shape[1])),
                         "sqrt": random.sample([i for i in range(0, X.shape[1])], int(X.shape[1]**0.5)),
                         "log2": random.sample([i for i in range(0, X.shape[1])], int(np.log2(X.shape[1]))),
