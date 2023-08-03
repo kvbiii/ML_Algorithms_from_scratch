@@ -5,7 +5,7 @@ sys.path.append(str(path_root))
 from requirements import *
 
 class Decision_Tree_Classifier():
-    def __init__(self, criterion="gini", max_depth=None, min_samples_split=2, max_features=None, random_state=17):
+    def __init__(self, criterion="gini", max_depth=None, min_samples_split=2, max_features=None, class_weight=None, random_state=17):
         self.criterion = criterion
         self.check_criterion(criterion=self.criterion)
         self.max_depth = max_depth
@@ -14,6 +14,8 @@ class Decision_Tree_Classifier():
         self.check_min_samples_split(min_samples_split=self.min_samples_split)
         self.max_features = max_features
         self.check_max_features(max_features=self.max_features)
+        self.class_weight = class_weight
+        self.check_class_weight(class_weight=self.class_weight)
         self.random_state = random_state
         np.random.seed(self.random_state)
         random.seed(self.random_state)
@@ -37,11 +39,16 @@ class Decision_Tree_Classifier():
         if not isinstance(max_features, int) and max_features!="log2" and max_features!="sqrt" and max_features != None:
             raise TypeError("Wrong type of max_features. It should be int, or string: `log2` or `sqrt`.")
     
+    def check_class_weight(self, class_weight):
+        if not isinstance(class_weight, dict) and class_weight!="balanced" and class_weight!=None:
+            raise TypeError("Wrong type of class_weight. It should be dict, string: `balanced` or None.")
+    
     def fit(self, X, y):
         self.X_train = self.check_X(X=X, train=True)
         self.y_train = self.check_y(y=y)
         self.X_train = self.check_for_object_columns(X=self.X_train)
         self.feature_importances_ = {f"Feature_{i}": 0 for i in range(0, self.X_train.shape[1])}
+        self.update_class_weight(y=self.y_train)
         self.tree = self.build_tree(X=self.X_train, y=self.y_train, depth=0)
         self.normalized_feature_importances = {key: value/np.sum(list(self.feature_importances_.values())) for key, value in self.feature_importances_.items()}
         self.fit_used = True
@@ -72,6 +79,12 @@ class Decision_Tree_Classifier():
         if X.select_dtypes(include=np.number).shape[1] != X.shape[1]:
             raise TypeError('Your data contains object or string columns. Numeric data is obligated.')
         return np.array(X)
+
+    def update_class_weight(self, y):
+        if(self.class_weight == None):
+            self.class_weight = {klasa: 1.0 for klasa in np.unique(self.y_train)}
+        elif(self.class_weight == "balanced"):
+            self.class_weight = {klasa: occurrences/len(y) for klasa, occurrences in zip(np.unique(y, return_counts=True)[0][:], np.unique(y, return_counts=True)[1][:])}
     
     def build_tree(self, X, y, depth):
         information_gain, question, condition, true_rows, false_rows = self.find_best_split(X=X, y=y)
@@ -101,8 +114,8 @@ class Decision_Tree_Classifier():
         best_false_rows = None
         uncertainty_current_subset = self.calculate_uncertainty(y=y)
         condition = {}
-        upper_bound = self.calculate_upper_bound(X=X)
-        for column in upper_bound:
+        limited_columns = self.get_limited_columns(X=X)
+        for column in limited_columns:
             interpolation_values = set([np.quantile(np.array(X)[:,column], q=i, method="midpoint") for i in [0, 0.2, 0.4, 0.6, 0.8, 1]])
             for interpolation_value in interpolation_values:
                 question = f"Is feature[{column}] <= {interpolation_value}"
@@ -119,7 +132,7 @@ class Decision_Tree_Classifier():
                     best_information_gain, best_question, best_condition, best_true_rows, best_false_rows = information_gain, question, condition.copy(), true_rows, false_rows
         return best_information_gain, best_question, best_condition, best_true_rows, best_false_rows
     
-    def calculate_upper_bound(self, X):
+    def get_limited_columns(self, X):
         upper_bound = {None: random.sample([i for i in range(0, X.shape[1])], int(X.shape[1])),
                         "sqrt": random.sample([i for i in range(0, X.shape[1])], int(X.shape[1]**0.5)),
                         "log2": random.sample([i for i in range(0, X.shape[1])], int(np.log2(X.shape[1]))),
@@ -145,7 +158,16 @@ class Decision_Tree_Classifier():
     def calculate_avg_uncertainty_child(self, y, true_rows, false_rows):
         uncertainty_subset_1 = self.calculate_uncertainty(y=y[true_rows])
         uncertainty_subset_2 = self.calculate_uncertainty(y=y[false_rows])
-        return len(true_rows)/(len(true_rows)+len(false_rows))*uncertainty_subset_1+len(false_rows)/(len(true_rows)+len(false_rows))*uncertainty_subset_2
+        occurrences_subset_1 = list(np.unique(y[true_rows], return_counts=True)[1][:])
+        occurrences_subset_2 = list(np.unique(y[false_rows], return_counts=True)[1][:])
+        for klasa in self.original_classes:
+            if(klasa not in np.unique(y[true_rows], return_counts=True)[0][:]):
+                occurrences_subset_1.insert(int(klasa), 0)
+            if(klasa not in np.unique(y[false_rows], return_counts=True)[0][:]):
+                occurrences_subset_2.insert(int(klasa), 0)
+        weighted_proportion_subset_1 = np.sum([self.class_weight[int(klasa)]*occurrences_subset_1[int(klasa)] for klasa in self.original_classes], axis=0)/(len(true_rows)+len(false_rows))
+        weighted_proportion_subset_2 = np.sum([self.class_weight[int(klasa)]*occurrences_subset_2[int(klasa)] for klasa in self.original_classes], axis=0)/(len(true_rows)+len(false_rows))
+        return weighted_proportion_subset_1*uncertainty_subset_1+weighted_proportion_subset_2*uncertainty_subset_2
 
     def calculate_information_gain(self, uncertainty_of_subset, avg_uncertainty_child):
         return uncertainty_of_subset - avg_uncertainty_child
