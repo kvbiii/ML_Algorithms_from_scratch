@@ -73,9 +73,9 @@ class Decision_Tree_Regressor():
         return np.array(X)
     
     def build_tree(self, X, y, depth):
-        information_gain, question, condition, true_rows, false_rows = self.find_best_split(X=X, y=y)
+        reduction, question, condition, true_rows, false_rows = self.find_best_split(X=X, y=y)
         # Base case: no further info gain. Since we can ask no further questions, we'll return a leaf.
-        if information_gain == 0:
+        if reduction == 0:
             return Leaf(y=y)
         # If we reach here, we have found a useful feature / value to partition on.
         X_true_subset = X[true_rows,:]
@@ -183,7 +183,7 @@ class Decision_Tree_Regressor():
     
     def check_fit(self, fit_used):
         if fit_used == False:
-            raise AttributeError('Decision_Tree_Classifier has to be fitted first.')
+            raise AttributeError('Decision_Tree_Regressor has to be fitted first.')
     
     def print_tree(self, node=None, spacing=""):
         if(node == None):
