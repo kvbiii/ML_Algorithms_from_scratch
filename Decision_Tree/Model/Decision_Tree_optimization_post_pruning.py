@@ -3,7 +3,7 @@ import sys
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from Plots.Algorithms_plots import *
 Algorithms_plots = Algorithm_plots()
 
