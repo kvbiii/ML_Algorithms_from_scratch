@@ -3,7 +3,7 @@ import sys
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 from requirements import *
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 class Cross_Validation_Decision_Tree_pre_pruning():
     def __init__(self, metric, algorithm_instance, cross_validation_instance):
