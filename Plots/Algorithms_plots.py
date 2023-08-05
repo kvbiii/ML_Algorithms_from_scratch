@@ -82,3 +82,25 @@ class Algorithm_plots():
         fig.add_trace(go.Scatter(x=[k for k in n_neighbors], y=valid_scores, mode='lines', line=dict(color="blue"), name="Valid Scores"))
         fig.update_layout(template="simple_white", width=600, height=600, title="<b>K Neighbors Tuning<b>", title_x=0.5, xaxis_title="Number of neighbors", yaxis_title=f"{metric.upper()}", font=dict(family="Times New Roman",size=16,color="Black"), showlegend=True)
         fig.show("png")
+    
+    #DecisionTree Plots
+    def depth_alpha_plot(self, ccp_alphas, depths):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=ccp_alphas, y=depths, mode='lines+markers', line=dict(color="blue")))
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Depth vs Alpha<b>", title_x=0.5, xaxis_title="Alpha", yaxis_title=f"Depth of tree", font=dict(family="Times New Roman",size=16,color="Black"), showlegend=False)
+        fig.show("png")
+    
+    def nodes_alpha_plot(self, ccp_alphas, nodes):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=ccp_alphas, y=nodes, mode='lines+markers', line=dict(color="blue")))
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Nodes vs Alpha<b>", title_x=0.5, xaxis_title="Alpha", yaxis_title=f"Number of nodes", font=dict(family="Times New Roman",size=16,color="Black"), showlegend=False)
+        fig.show("png")
+    
+    def scores_alpha_plot(self, ccp_alphas, train_scores, valid_scores, metric_name):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=ccp_alphas, y=train_scores, mode='lines+markers', line=dict(color="orange"), name="Train Scores"))
+        fig.add_trace(go.Scatter(x=ccp_alphas, y=valid_scores, mode='lines+markers', line=dict(color="blue"), name="Valid Scores"))
+        index_of_best_valid_score = valid_scores.index(max(valid_scores))
+        fig.add_annotation(x=ccp_alphas[index_of_best_valid_score], y=valid_scores[index_of_best_valid_score], showarrow=True, arrowhead=1, text=f"ccp_alpha={np.round(ccp_alphas[index_of_best_valid_score], 5)}", font=dict(family="Times New Roman",size=12,color="Black"))
+        fig.update_layout(template="simple_white", width=600, height=600, title=f"<b>{metric_name} vs alpha<b>", title_x=0.5, xaxis_title="Alpha", yaxis_title=f"{metric_name}", font=dict(family="Times New Roman",size=16,color="Black"), showlegend=True)
+        fig.show("png")
