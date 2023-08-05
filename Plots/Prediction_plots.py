@@ -11,6 +11,12 @@ class Prediction_plots():
         pass
     def compare_predictions_with_real_values(self, y_true, y_pred, metric="MSE"):
         self.metric = metric
+        y_true = np.array(y_true)
+        if(y_true.ndim == 2):
+            y_true = y_true.squeeze()
+        y_pred = np.array(y_pred)
+        if(y_pred.ndim == 2):
+            y_pred = y_pred.squeeze()
         metrics = { "MSE": mean_squared_error(y_true, y_pred),
                     "RMSE": root_mean_squared_error(y_true, y_pred),
                     "MAE": mean_absolute_error(y_true, y_pred),
@@ -20,8 +26,6 @@ class Prediction_plots():
         if self.metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
         self.eval_metric = np.round(metrics[self.metric], 5)
-        y_true = np.array(y_true)
-        y_pred = np.array(y_pred)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_true.flatten().tolist(), mode='lines', line=dict(color="orange"), name="Real values"))
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_pred.flatten().tolist(), mode='lines', line=dict(color="blue"), name="Predictions"))
