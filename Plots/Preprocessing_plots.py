@@ -15,7 +15,7 @@ class Preprocessing_plots():
         hist_data = [data]
         group_labels =[xaxis_title]
         fig = ff.create_distplot(hist_data, group_labels=group_labels, show_rug=False, curve_type='kde', bin_size=1)
-        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title=xaxis_title,yaxis_title="Density", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.update_layout(template="simple_white", width=800, height=600, showlegend=False, xaxis_title=xaxis_title, yaxis_title="Density", font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
     
     def boxplot(self, data):
