@@ -79,7 +79,7 @@ class Random_Forest_Classifier():
             X = X[None, :]
         if(train == False):
             if(self.X_train.shape[1] != X.shape[1]):
-                raise ValueError(f"X has {X.shape[1]} features, but Decision_Tree_Classifier is expecting {self.X_train.shape[1]} features as input.")
+                raise ValueError(f"X has {X.shape[1]} features, but Random_Forest_Classifier is expecting {self.X_train.shape[1]} features as input.")
         return X
 
     def check_y(self, y):
