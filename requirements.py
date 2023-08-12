@@ -21,3 +21,4 @@ from tabulate import tabulate
 import kds
 from collections import Counter
 from arch.bootstrap import MovingBlockBootstrap
+from scipy.optimize import minimize
