@@ -68,15 +68,15 @@ class Logistic_Regression():
             current_coef = self.coef_[:, klasa-1]
             for epoch in range(0, max_iter):
                 self.losses[epoch, klasa-1] = self.calculate_log_loss(X=X, y=y[:, klasa], coefs=current_coef)
-                grad_coef = self.derivative_of_loss(X=X, y=y[:,klasa], coefs=current_coef)
+                grad_coef = self.calculate_derivative_of_loss(X=X, y=y[:,klasa], coefs=current_coef)
                 current_coef = current_coef - learning_rate*grad_coef
             self.coef_[:, klasa-1] = current_coef
 
-    def derivative_of_loss(self, X, y, coefs):
-        return -1/X.shape[0]*np.dot(X.T, y-1/(1+np.exp(-np.matmul(coefs, X.T))))
-    
     def calculate_log_loss(self, X, y, coefs):
         return -1/X.shape[0]*np.sum(y*np.matmul(coefs, X.T)-np.log(1+np.exp(np.matmul(coefs, X.T))))
+    
+    def calculate_derivative_of_loss(self, X, y, coefs):
+        return -1/X.shape[0]*np.dot(X.T, y-1/(1+np.exp(-np.matmul(coefs, X.T))))
     
     def predict(self, X):
         self.check_fit(fit_used=self.fit_used)
