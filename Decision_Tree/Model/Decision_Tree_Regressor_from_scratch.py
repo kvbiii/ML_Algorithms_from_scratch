@@ -74,7 +74,7 @@ class Decision_Tree_Regressor():
     
     def build_tree(self, X, y, depth):
         best_split = self.find_best_split(X=X, y=y)
-        if(best_split["reduction"] != 0 and depth <= self.max_depth):
+        if(best_split["reduction"] != 0 and depth < self.max_depth):
             true_branch = self.build_tree(X=X[best_split["true_rows"], :], y=y[best_split["true_rows"]], depth=depth+1)
             self.calculate_node_importance(y=y, true_rows=best_split["true_rows"], false_rows=best_split["false_rows"], feature=best_split["feature"])
             false_branch = self.build_tree(X=X[best_split["false_rows"], :], y=y[best_split["false_rows"]], depth=depth+1)
