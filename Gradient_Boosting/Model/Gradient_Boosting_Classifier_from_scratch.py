@@ -41,8 +41,6 @@ class Gradient_Boosting_Classifier():
     def check_max_depth(self, max_depth):
         if not isinstance(max_depth, int) and max_depth != None:
             raise TypeError('Wrong type of max_depth. It should be int.')
-        if(max_depth == None):
-            self.max_depth = 100
     
     def fit(self, X, y):
         self.X_train = self.check_X(X=X, train=True)
@@ -73,7 +71,7 @@ class Gradient_Boosting_Classifier():
     
     def check_y(self, y):
         if not isinstance(y, pd.DataFrame) and not isinstance(y, pd.Series) and not isinstance(y, np.ndarray) and not torch.is_tensor(y):
-            raise TypeError('Wrong type of y. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
+            raise TypeError('Wrong type of y. It should be pandas DataFrame, pandas Series, numpy array or torch tensor with int or float inputs.')
         y = np.array(y, dtype=np.int64)
         if(y.ndim == 2):
             y = y.squeeze()
@@ -112,7 +110,7 @@ class Gradient_Boosting_Classifier():
 
     def calculate_negative_loss_gradient(self, y, predictions):
         predictions = np.array([100 if i > 100 else -100 if i < -100 else i for i in predictions])
-        negative_loss_gradient_dict={"log_loss": lambda y_true, y_pred: -(y_true - 1/(1+np.exp(-y_pred)))}
+        negative_loss_gradient_dict={"log_loss": lambda y_true, y_pred: (y_true - 1/(1+np.exp(-y_pred)))}
         return negative_loss_gradient_dict[self.loss](y, predictions)
     
     def update_leaf_nodes(self, estimator, X, y, predictions):
@@ -120,7 +118,6 @@ class Gradient_Boosting_Classifier():
         node_of_sample = estimator.apply(X)
         for leaf in leaf_nodes:
             samples_in_leaf = np.where(node_of_sample == leaf)[0]
-            X_in_leaf = X[samples_in_leaf]
             y_in_leaf = y[samples_in_leaf]
             preds_in_leaf = predictions[samples_in_leaf]
             preds_in_leaf = np.array([100 if i > 100 else -100 if i < -100 else i for i in preds_in_leaf])
